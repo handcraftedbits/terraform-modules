@@ -193,7 +193,7 @@ resource "aws_route53_record" "www_ipv6" {
 
 resource "aws_s3_bucket" "root" {
   bucket        = "${var.site_name}"
-  acl           = "public-read"
+  acl           = "private"
   force_destroy = true
 
   tags = "${map(var.tag_name, var.site_name)}"
