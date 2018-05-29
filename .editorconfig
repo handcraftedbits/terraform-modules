@@ -1,0 +1,7 @@
+[*.js]
+indent_size = 5
+indent_style = space
+
+[*.{tf,tfvars}]
+indent_size = 2
+indent_style = space

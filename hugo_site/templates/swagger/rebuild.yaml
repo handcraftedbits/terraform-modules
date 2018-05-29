@@ -1,0 +1,120 @@
+swagger: "2.0"
+
+info:
+  title: ${site_name}-rebuild
+  description: Rebuild webhook for ${site_name}
+  version: "1.0.0"
+
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /:
+    x-amazon-apigateway-any-method:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        404:
+          description: Resource not found
+          schema:
+            $ref: "#/definitions/Message"
+      x-amazon-apigateway-integration:
+        type: mock
+        passthroughBehavior: when_no_match
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: 404
+            responseTemplates:
+              application/json: "{\"message\": \"Not found\"}"
+  
+  /{path+}:
+    x-amazon-apigateway-any-method:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        404:
+          description: Resource not found
+          schema:
+            $ref: "#/definitions/Message"
+      x-amazon-apigateway-integration:
+        type: mock
+        passthroughBehavior: when_no_match
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: 404
+            responseTemplates:
+              application/json: "{\"message\": \"Not found\"}"
+    
+  /rebuild:
+    post:
+      operationId: rebuildSite
+      summary: Starts the process to rebuild ${site_name} site contents
+      parameters:
+        - in: header
+          name: X-Hub-Signature
+          description: The GitHub hash signature used to validate webhook invocations
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Site rebuild process started successfully
+          schema:
+            $ref: "#/definitions/Message"
+        500:
+          description: An error occurred starting the rebuild process
+          schema:
+            $ref: "#/definitions/Message"
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: 200
+        contentHandling: CONVERT_TO_TEXT
+        httpMethod: POST
+        passthroughBehavior: when_no_match
+        type: aws_proxy
+        uri: ${lambda_arn}
+    
+    x-amazon-apigateway-any-method:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        405:
+          description: Method not allowed
+          schema:
+            $ref: "#/definitions/Message"
+      x-amazon-apigateway-integration:
+        type: mock
+        passthroughBehavior: when_no_match
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        responses:
+          default:
+            statusCode: 405
+            responseTemplates:
+              application/json: "{\"message\": \"Method not allowed\"}"
+
+definitions:
+  Message:
+    type: object
+    description: A basic response message
+    properties:
+      message:
+        type: string
+        description: The response message
+    required:
+      - message
