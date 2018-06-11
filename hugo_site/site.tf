@@ -10,25 +10,6 @@ data "aws_acm_certificate" "site" {
   domain = "${var.site_name}"
 }
 
-data "aws_iam_policy_document" "bucket_root" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "s3:GetObject",
-    ]
-
-    principals {
-      identifiers = ["${aws_cloudfront_origin_access_identity.root.iam_arn}"]
-      type        = "AWS"
-    }
-
-    resources = [
-      "arn:aws:s3:::${var.site_name}/*",
-    ]
-  }
-}
-
 data "aws_route53_zone" "site" {
   name = "${var.site_name}."
 }
@@ -67,7 +48,7 @@ resource "aws_cloudfront_distribution" "root" {
   }
 
   origin {
-    domain_name = "${aws_s3_bucket.root.bucket_domain_name}"
+    domain_name = "${aws_s3_bucket.root.website_endpoint}"
     origin_id   = "origin.${var.site_name}"
 
     s3_origin_config {
@@ -193,7 +174,7 @@ resource "aws_route53_record" "www_ipv6" {
 
 resource "aws_s3_bucket" "root" {
   bucket        = "${var.site_name}"
-  acl           = "private"
+  acl           = "public-read"
   force_destroy = true
 
   tags = "${map(var.tag_name, var.site_name)}"
@@ -213,9 +194,4 @@ resource "aws_s3_bucket" "www" {
   website {
     redirect_all_requests_to = "https://${var.site_name}"
   }
-}
-
-resource "aws_s3_bucket_policy" "root" {
-  bucket = "${aws_s3_bucket.root.id}"
-  policy = "${data.aws_iam_policy_document.bucket_root.json}"
 }
