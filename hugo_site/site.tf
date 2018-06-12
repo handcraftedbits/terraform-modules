@@ -10,6 +10,25 @@ data "aws_acm_certificate" "site" {
   domain = "${var.site_name}"
 }
 
+data "aws_iam_policy_document" "bucket_root" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+    ]
+
+    principals {
+      identifiers = ["*"]
+      type        = "*"
+    }
+
+    resources = [
+      "arn:aws:s3:::${var.site_name}/*",
+    ]
+  }
+}
+
 data "aws_route53_zone" "site" {
   name = "${var.site_name}."
 }
@@ -197,4 +216,9 @@ resource "aws_s3_bucket" "www" {
   website {
     redirect_all_requests_to = "https://${var.site_name}"
   }
+}
+
+resource "aws_s3_bucket_policy" "root" {
+  bucket = "${aws_s3_bucket.root.id}"
+  policy = "${data.aws_iam_policy_document.bucket_root.json}"
 }
