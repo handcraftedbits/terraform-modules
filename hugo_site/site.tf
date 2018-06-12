@@ -51,8 +51,11 @@ resource "aws_cloudfront_distribution" "root" {
     domain_name = "${aws_s3_bucket.root.website_endpoint}"
     origin_id   = "origin.${var.site_name}"
 
-    s3_origin_config {
-      origin_access_identity = "${aws_cloudfront_origin_access_identity.root.cloudfront_access_identity_path}"
+    custom_origin_config {
+      http_port              = "80"
+      https_port             = "443"
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1"]
     }
   }
 
