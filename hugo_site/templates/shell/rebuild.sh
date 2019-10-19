@@ -1,30 +1,20 @@
 #!/bin/bash
 
-# Install Hugo
+# Install dependencies, start Docker.
 
-cd /tmp
-wget https://github.com/spf13/hugo/releases/download/v${hugo_version}/hugo_${hugo_version}_Linux-64bit.tar.gz
-tar -xzvf *.gz hugo
-rm *.gz
+sudo yum install -y docker git
+sudo service docker start
 
-# Clone content repository, install dependencies, rebuild site.
+# Clone site and build.
 
-git clone --recursive ${git_repo} ${repo_dir}
+git clone https://github.com/handcraftedbits/curtisshoward.com
+cd curtisshoward.com
+sudo bin/site build
 
-# Do preprocessing.
+# Copy to S3.
 
-${preprocess}
+aws s3 sync --delete dist s3://curtisshoward.com
 
-./hugo -s ${repo_dir} --theme=hugo-hcb-personal --baseURL=https://${site_name}/
-
-# Do postprocessing.
-
-${postprocess}
-
-# Sync site to S3 bucket.
-
-aws s3 sync --delete ${repo_dir}/public s3://${site_name}
-
-# Shut down so the EC2 instance is terminated.
+# Shutdown so EC2 will terminate the instance.
 
 sudo halt
