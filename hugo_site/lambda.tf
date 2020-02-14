@@ -150,34 +150,12 @@ data "template_file" "lambda" {
   }
 }
 
-data "template_file" "postprocess" {
-  template = file(var.postprocess_template)
-
-  vars = {
-    git_repo  = var.git_repo
-    repo_dir  = "/tmp/site_repo"
-    site_name = var.site_name
-  }
-}
-
-data "template_file" "preprocess" {
-  template = file(var.preprocess_template)
-
-  vars = {
-    git_repo  = var.git_repo
-    repo_dir  = "/tmp/site_repo"
-    site_name = var.site_name
-  }
-}
-
 data "template_file" "rebuild" {
   template = file("${path.module}/templates/shell/rebuild.sh")
 
   vars = {
     git_repo     = var.git_repo
     hugo_version = var.hugo_version
-    postprocess  = data.template_file.postprocess.rendered
-    preprocess   = data.template_file.preprocess.rendered
     repo_dir     = "/tmp/site_repo"
     site_name    = var.site_name
   }
@@ -209,7 +187,7 @@ resource "aws_lambda_function" "rebuild" {
   role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
   memory_size   = 128
-  runtime       = "nodejs6.10"
+  runtime       = "nodejs12.x"
   timeout       = 10
 
   tags = {
