@@ -62,7 +62,7 @@ resource "aws_security_group" "ec2" {
   }
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 }
 

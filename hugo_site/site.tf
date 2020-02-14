@@ -41,7 +41,7 @@ resource "aws_cloudfront_distribution" "root" {
   price_class         = var.cloudfront_price_class
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 
   custom_error_response {
@@ -99,7 +99,7 @@ resource "aws_cloudfront_distribution" "www" {
   price_class     = var.cloudfront_price_class
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 
   default_cache_behavior {
@@ -205,7 +205,7 @@ resource "aws_s3_bucket" "root" {
   force_destroy = true
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 
   website {
@@ -219,7 +219,7 @@ resource "aws_s3_bucket" "www" {
   force_destroy = true
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 
   website {

@@ -188,7 +188,7 @@ resource "aws_cloudwatch_log_group" "lambda" {
   retention_in_days = 3
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 }
 
@@ -213,7 +213,7 @@ resource "aws_lambda_function" "rebuild" {
   timeout       = 10
 
   tags = {
-    var.tag_name = var.site_name
+    (var.tag_name) = var.site_name
   }
 
   depends_on = [data.archive_file.lambda]
