@@ -53,6 +53,7 @@ resource "aws_cloudfront_distribution" "root" {
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
+    compress               = true
     default_ttl            = 3600
     max_ttl                = 86400
     min_ttl                = 3600
@@ -105,6 +106,7 @@ resource "aws_cloudfront_distribution" "www" {
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
+    compress               = true
     default_ttl            = 3600
     max_ttl                = 86400
     min_ttl                = 3600
@@ -206,6 +208,13 @@ resource "aws_s3_bucket" "root" {
 
   tags = {
     (var.tag_name) = var.site_name
+  }
+
+  cors_rule {
+    allowed_headers = ["Authorization", "Content-Length"]
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+    max_age_seconds = 3000
   }
 
   website {
