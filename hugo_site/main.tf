@@ -1,9 +1,12 @@
-provider "archive" {}
+provider "archive" {
+}
 
 provider "aws" {
   version = ">=1.20"
 
-  region = "${var.region}"
+  region = var.region
 }
 
-provider "template" {}
+provider "template" {
+}
+

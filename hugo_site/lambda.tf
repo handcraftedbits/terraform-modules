@@ -11,12 +11,13 @@ data "archive_file" "lambda" {
   output_path = "/tmp/lambda.zip"
 
   source {
-    content  = "${data.template_file.lambda.rendered}"
+    content  = data.template_file.lambda.rendered
     filename = "index.js"
   }
 }
 
-data "aws_caller_identity" "current" {}
+data "aws_caller_identity" "current" {
+}
 
 data "aws_iam_policy_document" "lambda_assume_role" {
   statement {
@@ -74,7 +75,7 @@ data "aws_iam_policy_document" "lambda" {
       variable = "ec2:InstanceType"
 
       values = [
-        "${var.instance_type}",
+        var.instance_type,
       ]
     }
 
@@ -107,7 +108,7 @@ data "aws_iam_policy_document" "lambda" {
     ]
 
     resources = [
-      "${aws_iam_role.ec2.arn}",
+      aws_iam_role.ec2.arn,
     ]
   }
 
@@ -120,7 +121,7 @@ data "aws_iam_policy_document" "lambda" {
     ]
 
     resources = [
-      "${aws_cloudwatch_log_group.lambda.arn}",
+      aws_cloudwatch_log_group.lambda.arn,
     ]
   }
 
@@ -138,47 +139,47 @@ data "aws_iam_policy_document" "lambda" {
 }
 
 data "template_file" "lambda" {
-  template = "${file("${path.module}/templates/node/index.js")}"
+  template = file("${path.module}/templates/node/index.js")
 
-  vars {
-    ami                          = "${var.ami}"
-    github_secret_parameter_name = "${var.github_secret_parameter_name}"
-    instance_type                = "${var.instance_type}"
-    site_name                    = "${var.site_name}"
-    user_data                    = "${base64encode(data.template_file.rebuild.rendered)}"
+  vars = {
+    ami                          = var.ami
+    github_secret_parameter_name = var.github_secret_parameter_name
+    instance_type                = var.instance_type
+    site_name                    = var.site_name
+    user_data                    = base64encode(data.template_file.rebuild.rendered)
   }
 }
 
 data "template_file" "postprocess" {
-  template = "${file(var.postprocess_template)}"
+  template = file(var.postprocess_template)
 
-  vars {
-    git_repo  = "${var.git_repo}"
+  vars = {
+    git_repo  = var.git_repo
     repo_dir  = "/tmp/site_repo"
-    site_name = "${var.site_name}"
+    site_name = var.site_name
   }
 }
 
 data "template_file" "preprocess" {
-  template = "${file(var.preprocess_template)}"
+  template = file(var.preprocess_template)
 
-  vars {
-    git_repo  = "${var.git_repo}"
+  vars = {
+    git_repo  = var.git_repo
     repo_dir  = "/tmp/site_repo"
-    site_name = "${var.site_name}"
+    site_name = var.site_name
   }
 }
 
 data "template_file" "rebuild" {
-  template = "${file("${path.module}/templates/shell/rebuild.sh")}"
+  template = file("${path.module}/templates/shell/rebuild.sh")
 
-  vars {
-    git_repo     = "${var.git_repo}"
-    hugo_version = "${var.hugo_version}"
-    postprocess  = "${data.template_file.postprocess.rendered}"
-    preprocess   = "${data.template_file.preprocess.rendered}"
+  vars = {
+    git_repo     = var.git_repo
+    hugo_version = var.hugo_version
+    postprocess  = data.template_file.postprocess.rendered
+    preprocess   = data.template_file.preprocess.rendered
     repo_dir     = "/tmp/site_repo"
-    site_name    = "${var.site_name}"
+    site_name    = var.site_name
   }
 }
 
@@ -186,32 +187,35 @@ resource "aws_cloudwatch_log_group" "lambda" {
   name              = "/aws/lambda/${replace(var.site_name, ".", "_")}-rebuild"
   retention_in_days = 3
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 }
 
 resource "aws_iam_role" "lambda" {
   name               = "${var.site_name}-lambda"
-  assume_role_policy = "${data.aws_iam_policy_document.lambda_assume_role.json}"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
 }
 
 resource "aws_iam_role_policy" "lambda" {
   name   = "${var.site_name}-lambda"
-  role   = "${aws_iam_role.lambda.id}"
-  policy = "${data.aws_iam_policy_document.lambda.json}"
+  role   = aws_iam_role.lambda.id
+  policy = data.aws_iam_policy_document.lambda.json
 }
 
 resource "aws_lambda_function" "rebuild" {
   filename      = "/tmp/lambda.zip"
   function_name = "${replace(var.site_name, ".", "_")}-rebuild"
-  role          = "${aws_iam_role.lambda.arn}"
+  role          = aws_iam_role.lambda.arn
   handler       = "index.handler"
   memory_size   = 128
   runtime       = "nodejs6.10"
   timeout       = 10
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 
-  depends_on = [
-    "data.archive_file.lambda",
-  ]
+  depends_on = [data.archive_file.lambda]
 }
+

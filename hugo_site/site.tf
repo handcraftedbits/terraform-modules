@@ -7,7 +7,7 @@
 # Create Route53 DNS records for root and www hostnames
 
 data "aws_acm_certificate" "site" {
-  domain = "${var.site_name}"
+  domain = var.site_name
 }
 
 data "aws_iam_policy_document" "bucket_root" {
@@ -34,13 +34,15 @@ data "aws_route53_zone" "site" {
 }
 
 resource "aws_cloudfront_distribution" "root" {
-  aliases             = ["${var.site_name}"]
+  aliases             = [var.site_name]
   default_root_object = "index.html"
   enabled             = "true"
   is_ipv6_enabled     = "true"
-  price_class         = "${var.cloudfront_price_class}"
+  price_class         = var.cloudfront_price_class
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 
   custom_error_response {
     error_code         = "404"
@@ -67,7 +69,7 @@ resource "aws_cloudfront_distribution" "root" {
   }
 
   origin {
-    domain_name = "${aws_s3_bucket.root.website_endpoint}"
+    domain_name = aws_s3_bucket.root.website_endpoint
     origin_id   = "origin.${var.site_name}"
 
     custom_origin_config {
@@ -85,7 +87,7 @@ resource "aws_cloudfront_distribution" "root" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = "${data.aws_acm_certificate.site.arn}"
+    acm_certificate_arn = data.aws_acm_certificate.site.arn
     ssl_support_method  = "sni-only"
   }
 }
@@ -94,9 +96,11 @@ resource "aws_cloudfront_distribution" "www" {
   aliases         = ["www.${var.site_name}"]
   enabled         = "true"
   is_ipv6_enabled = "true"
-  price_class     = "${var.cloudfront_price_class}"
+  price_class     = var.cloudfront_price_class
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
@@ -117,7 +121,7 @@ resource "aws_cloudfront_distribution" "www" {
   }
 
   origin {
-    domain_name = "${aws_s3_bucket.www.website_endpoint}"
+    domain_name = aws_s3_bucket.www.website_endpoint
     origin_id   = "origin.www.${var.site_name}"
 
     custom_origin_config {
@@ -135,71 +139,74 @@ resource "aws_cloudfront_distribution" "www" {
   }
 
   viewer_certificate {
-    acm_certificate_arn = "${data.aws_acm_certificate.site.arn}"
+    acm_certificate_arn = data.aws_acm_certificate.site.arn
     ssl_support_method  = "sni-only"
   }
 }
 
-resource aws_cloudfront_origin_access_identity "root" {}
+resource "aws_cloudfront_origin_access_identity" "root" {
+}
 
 resource "aws_route53_record" "root_ipv4" {
-  zone_id = "${data.aws_route53_zone.site.id}"
+  zone_id = data.aws_route53_zone.site.id
 
-  name = "${var.site_name}"
+  name = var.site_name
   type = "A"
 
   alias {
-    name                   = "${aws_cloudfront_distribution.root.domain_name}"
-    zone_id                = "${aws_cloudfront_distribution.root.hosted_zone_id}"
+    name                   = aws_cloudfront_distribution.root.domain_name
+    zone_id                = aws_cloudfront_distribution.root.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_route53_record" "root_ipv6" {
-  zone_id = "${data.aws_route53_zone.site.id}"
+  zone_id = data.aws_route53_zone.site.id
 
-  name = "${var.site_name}"
+  name = var.site_name
   type = "AAAA"
 
   alias {
-    name                   = "${aws_cloudfront_distribution.root.domain_name}"
-    zone_id                = "${aws_cloudfront_distribution.root.hosted_zone_id}"
+    name                   = aws_cloudfront_distribution.root.domain_name
+    zone_id                = aws_cloudfront_distribution.root.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_route53_record" "www_ipv4" {
-  zone_id = "${data.aws_route53_zone.site.id}"
+  zone_id = data.aws_route53_zone.site.id
 
   name = "www.${var.site_name}"
   type = "A"
 
   alias {
-    name                   = "${aws_cloudfront_distribution.www.domain_name}"
-    zone_id                = "${aws_cloudfront_distribution.www.hosted_zone_id}"
+    name                   = aws_cloudfront_distribution.www.domain_name
+    zone_id                = aws_cloudfront_distribution.www.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_route53_record" "www_ipv6" {
-  zone_id = "${data.aws_route53_zone.site.id}"
+  zone_id = data.aws_route53_zone.site.id
 
   name = "www.${var.site_name}"
   type = "AAAA"
 
   alias {
-    name                   = "${aws_cloudfront_distribution.www.domain_name}"
-    zone_id                = "${aws_cloudfront_distribution.www.hosted_zone_id}"
+    name                   = aws_cloudfront_distribution.www.domain_name
+    zone_id                = aws_cloudfront_distribution.www.hosted_zone_id
     evaluate_target_health = false
   }
 }
 
 resource "aws_s3_bucket" "root" {
-  bucket        = "${var.site_name}"
+  bucket        = var.site_name
   acl           = "public-read"
   force_destroy = true
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 
   website {
     index_document = "index.html"
@@ -211,7 +218,9 @@ resource "aws_s3_bucket" "www" {
   acl           = "public-read"
   force_destroy = true
 
-  tags = "${map(var.tag_name, var.site_name)}"
+  tags = {
+    var.tag_name = var.site_name
+  }
 
   website {
     redirect_all_requests_to = "https://${var.site_name}"
@@ -219,6 +228,7 @@ resource "aws_s3_bucket" "www" {
 }
 
 resource "aws_s3_bucket_policy" "root" {
-  bucket = "${aws_s3_bucket.root.id}"
-  policy = "${data.aws_iam_policy_document.bucket_root.json}"
+  bucket = aws_s3_bucket.root.id
+  policy = data.aws_iam_policy_document.bucket_root.json
 }
+
